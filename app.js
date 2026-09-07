@@ -8,8 +8,31 @@ app.get('/', (req, res) => {
     res.send('Hello Everyone 😍')
 })
 
-app.get('/books', (req, res) => {
-    res.json(books)
+app.get('/books', (req, res) => {    
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit) || 10);
+    const search = req.query.search ? req.query.search.trim() : '';
+
+    let filteredBooks = books;
+    if (search) {
+        filteredBooks = books.filter(b => 
+            b.name.toLowerCase().includes(search.toLowerCase())
+        );
+    }
+
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+
+    const paginatedBooks = filteredBooks.slice(startIndex, endIndex);
+
+    res.json({
+        page,
+        limit,
+        totalBooks: filteredBooks.length,
+        totalPages: Math.ceil(filteredBooks.length / limit),
+        data: paginatedBooks
+    });
+    /*res.json(books)*/
 });
 
 app.get('/books/:code', (req, res) => {
