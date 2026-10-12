@@ -3,7 +3,7 @@ const books =[
         code:1,
         name:"dam kar",
         category: "metach",
-        price: 80,
+        price: 85,
         isBorrowed: true,
         loans: [
         { loanDate: "2026-06-01", customerCode: 101 },
