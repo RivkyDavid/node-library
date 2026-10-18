@@ -1,11 +1,14 @@
-import express from 'express';
-import books from './booksDb.js';
-import { addCurrentDate, logGetRequestDate, blockOnShabbat } from './middlewares/site.middleware.js';
-import mainRouter from './routes/index.route.js'
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import express from 'express';
+
+import books from './booksDb.js';
+import { addCurrentDate, logGetRequestDate, blockOnShabbat } from './middlewares/site.middleware.js';
+import {notFoundHundler,globalErrorHandler} from './middlewares/error.middleware.js'
+import mainRouter from './routes/index.route.js'
+
 
 const app = express();
 
@@ -32,12 +35,16 @@ app.use(blockOnShabbat(12, 22))
 app.use('/api', mainRouter);
 
 
-const port = 5000;
 
 app.get('/', (req, res) => {
     res.send('Hello Everyone 😍')
 })
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+app.use(globalErrorHandler);
+app.use(notFoundHundler);
+
+const PORT = process.env.PORT ?? 5000;
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
