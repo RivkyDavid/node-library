@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>בדיקת תקשורת עם השרת</title>
+</head>
+<body>
+    <h1>בדיקת פרויקט ספריה מול השרת</h1>
+    <button onclick="getBooks()">הצג את כל הספרים</button>
+    <div id="result" style=" white-space: pre-wrap;"></div>
+
+    <script>
+        async function getBooks() {
+            try {
+                // פנייה לשרת שלך בפורט 5000
+                const response = await fetch('http://localhost:5000/api/books');
+                const data = await response.json();
+                
+                // הצגת הנתונים על המסך
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('שגיאה בהתחברות לשרת:', error);
+                document.getElementById('result').textContent = 'שגיאה: לא ניתן להתחבר לשרת.';
+            }
+        }
+    </script>
+</body>
+</html>
