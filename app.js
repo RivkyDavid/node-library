@@ -12,7 +12,9 @@ app.use(blockOnShabbat(12, 22))
 
 app.use('/api', mainRouter);
 
+
 const port = 5000;
+
 app.get('/', (req, res) => {
     res.send('Hello Everyone 😍')
 })
