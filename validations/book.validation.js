@@ -1,5 +1,4 @@
-import Joi from "joi"
-import joi from joi
+import Joi from "joi";
 
 export const bookValidationSchema = Joi.object({
     code: Joi.number().integer().positive(),

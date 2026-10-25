@@ -1,6 +1,6 @@
 import express from 'express';
 import { validate } from '../middlewares/validate.middleware.js';
-import { bookValidationSchema } from '../validators/book.validator.js';
+import { bookValidationSchema } from '../validations/book.validation.js';
 import * as bookController from '../controllers/book.controller.js'
 
 

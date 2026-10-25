@@ -1,9 +1,10 @@
-import joi from joi
+import Joi from "joi";
+
 
 export const userValidationSchema = Joi.object({
     userName: Joi.string().alphanum().min(3).max(30),
 
-    email: Joi.string().email({ tlds: { allow: ['com', 'co.il', 'org'] } }),
+    email: Joi.string().email({ tlds: { allow: ['com', 'il', 'org'] } }),
 
     password: Joi.string().
         min(8).

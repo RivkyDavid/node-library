@@ -1,10 +1,11 @@
+import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import express from 'express';
 
-import books from "../DB/booksDb.js";
+//import books from './DB/booksDb.js';
 import { addCurrentDate, logGetRequestDate, blockOnShabbat } from './middlewares/site.middleware.js';
 import {notFoundHundler,globalErrorHandler} from './middlewares/error.middleware.js'
 import mainRouter from './routes/index.route.js'
@@ -14,6 +15,8 @@ const app = express();
 
 // CORS- מאפשר גישה מכל פרויקט קליינט בלי להתקל בבעיות חסימה 
 app.use(cors());
+
+app.use('/public', express.static('public'));
 
 //Morgan - מדפיס את נתוני כל בקשה שמגיעה לשרת במצב פיתוח
 app.use(morgan('dev'));
