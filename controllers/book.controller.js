@@ -1,5 +1,5 @@
-import books from "../booksDb.js";
-import users from "../usersDb.js";
+import books from "../DB/booksDb.js";
+import users from "../DB/usersDb.js";
 
 export const getAllBooks = (req, res, next) => {
     try {
