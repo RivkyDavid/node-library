@@ -1,28 +1,29 @@
-import books from "../DB/booksDb.js";
-import users from "../DB/usersDb.js";
+import { use } from "react";
+import Book from "../models/book.model.js";
+import books from "../models/book.model.js";
+import users from "../models/user.model.js";
 
-export const getAllBooks = (req, res, next) => {
+export const getAllBooks = async (req, res, next) => {
     try {
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = Math.max(1, parseInt(req.query.limit) || 10);
         const search = req.query.search ? req.query.search.trim() : '';
 
-        let filteredBooks = books;
+        let query = {};
         if (search) {
-            filteredBooks = books.filter(b =>
-                b.name.toLowerCase().includes(search.toLowerCase())
-            );
+            query.name = { $regex: search, $options: 'i' };
         }
 
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedBooks = filteredBooks.slice(startIndex, endIndex);
+        const totalBooks = await Book.countDocuments(query);
+        const paginatedBooks = await Book.find(query)
+            .skip((page - 1) * limit)
+            .limit(limit);
 
         res.json({
             page,
             limit,
-            totalBooks: filteredBooks.length,
-            totalPages: Math.ceil(filteredBooks.length / limit),
+            totalBooks,
+            totalPages: Math.ceil(totalBooks / limit),
             data: paginatedBooks
         });
     } catch (err) {
@@ -30,10 +31,10 @@ export const getAllBooks = (req, res, next) => {
     }
 };
 
-export const getBookByCode = (req, res, next) => {
+export const getBookByCode = async (req, res, next) => {
     try {
         const bookCode = +req.params.code;
-        const foundBook = books.find(b => b.code === bookCode);
+        const foundBook = await Book.findOne({ code: bookCode });
 
         if (!foundBook) {
             res.status(404);
@@ -45,10 +46,9 @@ export const getBookByCode = (req, res, next) => {
     }
 };
 
-export const addBook = (req, res, next) => {
+export const addBook = async (req, res, next) => {
     try {
-        const newBook = req.body;
-        books.push(newBook);
+        const newBook = await Book.create(req.body);
         res.status(201).json({
             massage: 'the book added successfully',
             book: newBook
@@ -58,35 +58,36 @@ export const addBook = (req, res, next) => {
     }
 };
 
-export const updateBook = (req, res, next) => {
+export const updateBook = async (req, res, next) => {
     try {
         const bookCode = +req.params.code;
-        const book = books.find(b => b.code === bookCode);
+        const updateBook = await Book.findOneAndUpdate(
+            { code: bookCode },
+            req.body,
+            { new: true, runValidators: true }
+        );
 
-        if (!book) {
+        if (!updateBook) {
             res.status(404);
             return next(new Error('book not found'));
         }
-        if (req.body.name !== undefined) { book.name = req.body.name; }
-        if (req.body.categoty !== undefined) { book.categoty = req.body.categoty; }
-        if (req.body.price !== undefined) { book.price = req.body.price; }
 
         res.json({
             massage: 'the book updated successfully!',
-            book
+            book: updateBook
         });
     } catch (err) {
         next(err);
     }
 };
 
-export const borrowBook = (req, res, next) => {
+export const borrowBook = async (req, res, next) => {
     try {
         const bookCode = +req.params.code;
         const { customerCode } = req.body;
 
-        const book = books.find(b => b.code === bookCode);
-        const user = users.find(u => u.code === +customerCode);
+        const book = await Book.findOne({ code: bookCode });
+        const user = await User.findOne({ code: +customerCode });
 
         if (!book) {
             res.status(404);
@@ -114,11 +115,13 @@ export const borrowBook = (req, res, next) => {
             book.loans = [];
         }
         book.loans.push(newLoan);
+        await book.save();
 
         if (!user.loanBooks) {
             user.loanBooks = [];
         }
         user.loanBooks.push(book.code);
+        await user.save();
 
         res.json({
             massage: 'book borrowed successfully!!',
@@ -130,12 +133,12 @@ export const borrowBook = (req, res, next) => {
     }
 };
 
-export const returnBook = (req, res, next) => {
+export const returnBook = async (req, res, next) => {
     try {
         const bookCode = +req.params.code;
         const { customerCode } = req.body;
 
-        const book = books.find(b => b.code === bookCode);
+        const book = await Book.findOne({ code: bookCode });
 
         if (!book) {
             res.status(404);
@@ -150,13 +153,13 @@ export const returnBook = (req, res, next) => {
 
         let user = null;
         if (customerCode) {
-            user = users.find(u => u.code === +customerCode);
+            user = await user.findOne({ code: +customerCode });
         } else {
-            user = users.find(u => u.loanBooks && u.loanBooks.includes(bookCode));
-        }
+            user = await User.findOne({ loanBooks: bookCode });        }
 
         if (user && user.loanBooks) {
             user.loanBooks = user.loanBooks.filter(code => code !== bookCode);
+            await user.save();
         }
 
         res.json({
@@ -169,17 +172,16 @@ export const returnBook = (req, res, next) => {
     }
 };
 
-export const deleteBook = (req, res, next) => {
+export const deleteBook = async (req, res, next) => {
     try {
         const bookCode = +req.params.code;
-        const index = books.findIndex(b => b.code === bookCode);
+        const deletedBook = await Book.findOneAndDelete({code:bookCode});
 
-        if (index === -1) {
+        if (!deletedBook) {
             res.status(404);
             return next(new Error('book not found'));
         }
 
-        const [deletedBook] = books.splice(index, 1);
         res.json({
             massage: 'book deleted successfully!',
             book: deletedBook
