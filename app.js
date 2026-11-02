@@ -9,6 +9,7 @@ import rateLimit from 'express-rate-limit';
 import { addCurrentDate, logGetRequestDate, blockOnShabbat } from './middlewares/site.middleware.js';
 import {notFoundHundler,globalErrorHandler} from './middlewares/error.middleware.js'
 import mainRouter from './routes/index.route.js'
+import connectDB from './config/DB.js';
 
 
 const app = express();
@@ -47,6 +48,8 @@ app.use(globalErrorHandler);
 app.use(notFoundHundler);
 
 const PORT = process.env.PORT ?? 5000;
+
+connectDB();
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
