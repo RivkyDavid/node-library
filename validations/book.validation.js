@@ -3,7 +3,7 @@ import Joi from "joi";
 export const bookValidationSchema = Joi.object({
     code: Joi.number().integer().positive(),
 
-    name: Joi.string().alphanum().min(2).max(20),
+    name: Joi.string().alphanum().min(2).max(20).required(),
 
     categoty: Joi.string().valid('Regesh', 'History', 'Children', 'Metach'),
 
