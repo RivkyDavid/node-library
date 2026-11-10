@@ -107,7 +107,7 @@ export const borrowBook = async (req, res, next) => {
 
         book.isBorrowed = true;
         await book.save();
-        
+
         if (!user.books) {
             user.books = [];
         }
@@ -178,6 +178,17 @@ export const deleteBook = async (req, res, next) => {
             massage: 'book deleted successfully!',
             book: deletedBook
         });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const getBooksByCategory = async (req, res, next) => {
+    try {
+        const category = req.params.category;
+        const books = await Book.find({ categories: category });
+
+        res.status(200).json({books});
     } catch (err) {
         next(err);
     }

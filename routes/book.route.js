@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.get('/', bookController.getAllBooks);
 router.get('/:code', bookController.getBookByCode);
+router.get('/category/:category', bookController.getBooksByCategory);
 
 router.post('/', validate(bookValidationSchema), bookController.addBook);
 router.post('/:code/borrow',bookController.borrowBook);
