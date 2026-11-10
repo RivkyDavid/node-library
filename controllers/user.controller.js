@@ -1,24 +1,28 @@
-import users from "../DB/usersDb.js";
+import mongoose from "mongoose";
+import User from "../models/user.model.js";
 
-export const getAllUsers = (req, res, next) => {
+export const getAllUsers = async (req, res, next) => {
     try {
-        res.json(users);
-    } catch (err) {
-        next(err);
+        const users = await User.find({});
+        res.status(200).json(users);
+    }
+    catch (error) {
+        next(error)
     }
 };
 
-export const signUp = (req, res, next) => {
+export const signUp = async (req, res, next) => {
     try {
         const { code, userName, email, password } = req.body;
+        const existUser = await User.findOne({ email });
 
-        if (users.some(u => u.code === code || u.email === email)) {
-            res.status(400);
-            return next(new Error("user is already exist"));
+        if (existUser) {
+            res.status(404);
+            return next(new Error("user is already exist"))
         }
 
-        const newUser = { code, userName, email, password, loanBooks: [] };
-        users.push(newUser);
+        const newUser = new User({ name, email, phone, password, books: [] });
+        await newUser.save();
 
         res.status(201).json({ massage: "user added successfully", newUser });
     } catch (err) {
@@ -26,12 +30,17 @@ export const signUp = (req, res, next) => {
     }
 };
 
-export const signIn = (req, res, next) => {
+export const signIn = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        const user = users.find(u => u.email === email && u.password === password);
+        const user = await User.findOne({ email });
 
         if (!user) {
+            res.status(401);
+            return next(new Error("not valid email or password"));
+        }
+
+        if (password !== user.password) {
             res.status(401);
             return next(new Error("not valid email or password"));
         }
