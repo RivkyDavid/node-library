@@ -1,7 +1,5 @@
-import { use } from "react";
 import Book from "../models/book.model.js";
-import books from "../models/book.model.js";
-import users from "../models/user.model.js";
+import User from "../models/user.model.js";
 
 export const getAllBooks = async (req, res, next) => {
     try {
@@ -11,7 +9,7 @@ export const getAllBooks = async (req, res, next) => {
 
         let query = {};
         if (search) {
-            query.name = { $regex: search, $options: 'i' };
+            query.title = { $regex: search, $options: 'i' };
         }
 
         const totalBooks = await Book.countDocuments(query);
@@ -84,10 +82,10 @@ export const updateBook = async (req, res, next) => {
 export const borrowBook = async (req, res, next) => {
     try {
         const bookCode = +req.params.code;
-        const { customerCode } = req.body;
+        const { email } = req.body;
 
         const book = await Book.findOne({ code: bookCode });
-        const user = await User.findOne({ code: +customerCode });
+        const user = await User.findOne({ email });
 
         if (!book) {
             res.status(404);
@@ -101,26 +99,19 @@ export const borrowBook = async (req, res, next) => {
             res.status(400);
             return next(new Error('book is borrowed now, you can not take it :('));
         }
-        if (user.loanBooks && user.loanBooks.length > 0) {
+        const alreadyBorrowed = user.books.some(b => b.code === book.code);
+        if (alreadyBorrowed) {
             res.status(400);
-            return next(new Error('user already has a borrowed book'));
+            return next(new Error('you have already borrowed this book'));
         }
 
         book.isBorrowed = true;
-        const newLoan = {
-            loanDate: new Date().toISOString(),
-            customerCode: customerCode
-        };
-        if (!book.loans) {
-            book.loans = [];
-        }
-        book.loans.push(newLoan);
         await book.save();
-
-        if (!user.loanBooks) {
-            user.loanBooks = [];
+        
+        if (!user.books) {
+            user.books = [];
         }
-        user.loanBooks.push(book.code);
+        user.books.push({ code: book.code, bookName: book.title });
         await user.save();
 
         res.json({
@@ -128,6 +119,7 @@ export const borrowBook = async (req, res, next) => {
             book,
             user
         });
+
     } catch (err) {
         next(err);
     }
@@ -136,7 +128,7 @@ export const borrowBook = async (req, res, next) => {
 export const returnBook = async (req, res, next) => {
     try {
         const bookCode = +req.params.code;
-        const { customerCode } = req.body;
+        const { email } = req.body;
 
         const book = await Book.findOne({ code: bookCode });
 
@@ -149,18 +141,18 @@ export const returnBook = async (req, res, next) => {
             return next(new Error('book is not borrowed now. you cant give it back :('));
         }
 
-        book.isBorrowed = false;
-
         let user = null;
-        if (customerCode) {
-            user = await user.findOne({ code: +customerCode });
+        if (email) {
+            user = await User.findOne({ email });
         } else {
-            user = await User.findOne({ loanBooks: bookCode });        }
-
-        if (user && user.loanBooks) {
-            user.loanBooks = user.loanBooks.filter(code => code !== bookCode);
-            await user.save();
+            user = await User.findOne({ "books.code": bookCode });
         }
+
+        book.isBorrowed = false;
+        await book.save();
+
+        user.books = user.books.filter(b => b.code !== bookCode);
+        await user.save();
 
         res.json({
             massage: 'book returned successfully!!',
@@ -175,7 +167,7 @@ export const returnBook = async (req, res, next) => {
 export const deleteBook = async (req, res, next) => {
     try {
         const bookCode = +req.params.code;
-        const deletedBook = await Book.findOneAndDelete({code:bookCode});
+        const deletedBook = await Book.findOneAndDelete({ code: bookCode });
 
         if (!deletedBook) {
             res.status(404);
