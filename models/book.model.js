@@ -5,11 +5,16 @@ const bookSchema = new mongoose.Schema({
     title: { type: String, required: true },
     price: { type: Number, required: true },
     categories: { type: [String], required: true },
-    isBorrowed: { type: Boolean, default: false }, 
+    isBorrowed: { type: Boolean, default: false },
     author: {
         name: { type: String, required: true },
         phone: { type: String, required: true },
         email: { type: String, required: true }
+    },
+    borowedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
     }
 });
 

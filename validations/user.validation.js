@@ -14,5 +14,6 @@ export const userValidationSchema = Joi.object({
             code: Joi.number().integer().required(),
             bookName: Joi.string().required()
         })
-    )
+    ),
+    borrowDate: Joi.date().default(Date.now)
 });

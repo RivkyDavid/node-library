@@ -1,4 +1,5 @@
 import Book from "../models/book.model.js";
+import Loan from "../models/loan.model.js";
 import User from "../models/user.model.js";
 
 export const getAllBooks = async (req, res, next) => {
@@ -95,29 +96,52 @@ export const borrowBook = async (req, res, next) => {
             res.status(404);
             return next(new Error('user not found'));
         }
-        if (book.isBorrowed) {
+        if (book.isBorrowed || book.borowedBy) {
             res.status(400);
             return next(new Error('book is borrowed now, you can not take it :('));
         }
+
+        if (user.books.length >= 3) {
+            res.status(400);
+            return next(new Error('you can not borrow more than 3 books'));
+        }
+
         const alreadyBorrowed = user.books.some(b => b.code === book.code);
         if (alreadyBorrowed) {
             res.status(400);
             return next(new Error('you have already borrowed this book'));
         }
 
+        const returnDate = new Date();
+        returnDate.setDate(returnDate.getDate() + 14);
+
         book.isBorrowed = true;
+        book.borowedBy = user._id;
         await book.save();
 
         if (!user.books) {
             user.books = [];
         }
-        user.books.push({ code: book.code, bookName: book.title });
+        user.books.push({
+            code: book.code,
+            bookName: book.title,
+            returnDate: returnDate
+        });
         await user.save();
+
+        const loan = new Loan({
+            user: user._id,
+            book: book._id,
+            returnDate: returnDate
+        });
+        await loan.save();
+
 
         res.json({
             massage: 'book borrowed successfully!!',
             book,
-            user
+            user,
+            loan
         });
 
     } catch (err) {
@@ -188,7 +212,7 @@ export const getBooksByCategory = async (req, res, next) => {
         const category = req.params.category;
         const books = await Book.find({ categories: category });
 
-        res.status(200).json({books});
+        res.status(200).json({ books });
     } catch (err) {
         next(err);
     }
