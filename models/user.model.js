@@ -17,9 +17,34 @@ const userSchema = new mongoose.Schema({
 });
 
 const saltRounds = +process.env.SALT_ROUNDS || 10;
-userSchema.pre("save", /update/i, async function () {
-    this.password = await bcrypt.hash(this.password, saltRounds)
-})
+userSchema.pre('save', async function () {
+  if (!this.isModified('password') || !this.password) {
+    return;
+  }
+
+  this.password = await bcrypt.hash(this.password, saltRounds);
+});
+
+userSchema.pre(/update/i, async function () {
+  const update = this.getUpdate();
+  if (!update) {
+    return;
+  }
+
+  const nextPassword = update.password ?? update.$set?.password;
+  if (!nextPassword) {
+    return;
+  }
+
+  const hashedPassword = await bcrypt.hash(nextPassword, saltRounds);
+
+  if (update.password) {
+    update.password = hashedPassword;
+  }
+  if (update.$set && update.$set.password) {
+    update.$set.password = hashedPassword;
+  }
+});
 
 const User = mongoose.model('User', userSchema);
 
