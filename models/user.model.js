@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
@@ -9,10 +10,16 @@ const userSchema = new mongoose.Schema({
     books: [
         {
             code: { type: Number, required: true },
-            bookName: { type: String, required: true }
+            bookName: { type: String, required: true },
+            returnDate: { type: Date, required: true }
         }
     ]
 });
+
+const saltRounds = +process.env.SALT_ROUNDS || 10;
+userSchema.pre("save", /update/i, async function () {
+    this.password = await bcrypt.hash(this.password, saltRounds)
+})
 
 const User = mongoose.model('User', userSchema);
 

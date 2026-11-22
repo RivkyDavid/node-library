@@ -8,4 +8,5 @@ export const bookValidationSchema = Joi.object({
     categoty: Joi.string().valid('Regesh', 'History', 'Children', 'Metach'),
 
     price: Joi.number().positive().required()
+    
 })
